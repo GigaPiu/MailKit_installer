@@ -1,0 +1,524 @@
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+FUNCTION mail_set_name()
+STRING sName,sPassword;
+INT nRes;
+
+	//check livello richiesto di password
+	IF check_pwd(8)=0 THEN RETURN END;
+	
+	//tastiera a video
+	keyboardW10();
+	
+	sName 		= mail_sender;
+	sPassword 	= mail_password;
+
+	//popup
+	FormNew("@(Insert mail and password for configure mail account)", 70 , 3, 0 + 8 +16+256);
+	FormPrompt(0,0,"@(Name)");
+	FormField (10, 0, 60 , 1 ,1, sName, sName, 0, 127) 
+	FormPrompt(0,1,"@(Password)");
+	FormField (10, 1, 60 , 1 ,2, sPassword, sPassword, 0, 127) 
+
+	FormButton(20,   2, "   OK   " , 0, 1);
+	FormButton(35,  2, "  STOP  " , 0, 2);
+
+
+	IF FormRead(0) = 0 THEN
+	
+		//tastiera a video
+		keyboardW10();
+
+		
+		sName = StrTrim(sName);
+		sPassword = StrTrim(sPassword);
+		
+		IF StrLength(sName) < 1 THEN
+			Message("@(Error)","@(No valid name inserted)",0+16);
+			RETURN;
+		END
+
+		IF StrLength(sPassword) < 1 THEN
+			Message("@(Error)","@(No valid password inserted)",0+16);
+			RETURN;
+		END
+		
+		
+			mail_sender = sName;
+			mail_password = sPassword;
+			
+			Log_event("Account mail address and password configured");
+			
+			Message("@(OK)","@(Mail account configured)",0+64);
+
+		RETURN;
+	
+	END
+	
+	//tastiera a video
+	keyboardW10();
+	
+
+	Message("@(Error)","@(Operation aborted by operator)",0+64);
+
+	
+
+END
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION mail_set_receiver(INT nUtente)
+INT nRes;
+STRING sName;
+
+	//check livello richiesto di password
+	IF check_pwd(8)=0 THEN RETURN END;
+
+SELECT CASE nUtente
+	CASE 1
+		sName = mail_receiver_1;
+	CASE 2
+		sName = mail_receiver_2;
+	CASE 3
+		sName = mail_receiver_3;
+	CASE 4
+		sName = mail_receiver_4;
+END SELECT
+
+	//tastiera a video
+	keyboardW10();
+
+//popup
+	FormNew("@(Insert email address for configure mail exit)", 70 , 3, 0 + 8 +16+256);
+	FormPrompt(0,0,"@(Name)");
+	FormField (10, 0, 60 , 1 ,1, sName, sName, 0, 127);
+
+	FormButton(20,   2, "   OK   " , 0, 1);
+	FormButton(35,  2, "  STOP  " , 0, 2);
+
+
+	IF FormRead(0) = 0 THEN
+
+		//tastiera a video
+		keyboardW10();
+		
+		sName = StrTrim(sName);
+
+	
+		SELECT CASE nUtente
+			CASE 1
+				mail_receiver_1 = sname;
+			CASE 2
+				mail_receiver_2 = sname;
+			CASE 3
+				mail_receiver_3 = sname;
+			CASE 4
+				mail_receiver_4 = sname;
+		END SELECT
+		
+
+		Log_event("Account mail receiver address configured");
+		
+		Message("@(OK)","@(Mail account configured)",0+64);
+
+		RETURN;
+		
+	END
+	
+	//tastiera a video
+	keyboardW10();
+	
+
+	Message("@(Error)","@(Operation aborted by operator)",0+64);
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+FUNCTION mail_set_server()
+INT nRes;
+STRING sName;
+
+	//check livello richiesto di password
+	IF check_pwd(8)=0 THEN RETURN END;
+	
+	sName = mail_server;
+
+	//tastiera a video
+	keyboardW10();
+
+
+//popup
+	FormNew("@(Insert smtp address)", 70 , 3, 0 + 8 +16+256);
+	FormPrompt(0,0,"@(Server)");
+	FormField (10, 0, 60 , 1 ,1, sName, sName, 0, 127);
+
+	FormButton(20,   2, "   OK   " , 0, 1);
+	FormButton(35,  2, "  STOP  " , 0, 2);
+
+
+	IF FormRead(0) = 0 THEN
+	
+		//tastiera a video
+		keyboardW10();
+
+		
+		sName = StrTrim(sName);
+
+		IF StrLength(sName) < 1 THEN
+			Message("@(Error)","@(No valid address inserted)",0+16);
+			RETURN;
+		END
+		
+		mail_server = sName;
+
+		Log_event("Mail server address configured");
+		
+		Message("@(OK)","@(Mail server address configured)",0+64);
+
+		RETURN;
+		
+	END
+	
+	//tastiera a video
+	keyboardW10();
+	
+
+	Message("@(Error)","@(Operation aborted by operator)",0+64);
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+FUNCTION test_mail()
+INT nFile;
+STRING sFile;
+	
+	//check livello richiesto di password
+	IF check_pwd(8)=0 THEN RETURN END;
+	
+	IF MailKit_enable = 0 THEN //Invio e-mail tramite batch (SendEmail.exe)
+		
+		ErrSet(1);
+		
+		sFile = "c:\data\mail\send_test.bat";
+		
+		nFile = FileOpen(sFile,"w");
+		
+		IF nFile <> -1 THEN
+	
+			FileWriteLn(nFile,"cd c:\data\mail");
+			FileWrite(nFile,"sendemail");
+			FileWrite(nFile," -f "+mail_sender);
+			FileWrite(nFile," -t "+mail_receiver_1);
+			FileWrite(nFile,"  "+mail_receiver_2);
+			FileWrite(nFile,"  "+mail_receiver_3);
+			FileWrite(nFile,"  "+mail_receiver_4);	
+			FileWrite(nFile," -u Test Email -m This mail is only a test, do not reply");
+			FileWrite(nFile," -s "+mail_server)
+			FileWrite(nFile,":"+IntToStr(mail_port));
+			FileWrite(nFile," -xu "+mail_sender);
+			FileWrite(nFile," -xp "+mail_password);	
+			IF mail_tls THEN
+				FileWrite(nFile," -o tls=yes");	
+			END
+			FileWriteLn(nFile," ");
+			FileWrite(nFile,"pause");
+			
+			FileClose(nFile);
+			
+			
+		END
+		
+		ErrSet(0);
+	
+		Exec("c:\data\mail\send_test.bat");
+	
+	ELSE //Invio e-mail tramite PowerShell (MailKit.dll)
+	
+		ErrSet(1);
+		sFile = "c:\data\mail\send_test.ps1";
+		nFile = FileOpen(sFile,"w");
+		
+		IF nFile <> -1 THEN
+			FileWriteLn(nFile,"Add-Type -Path ^"C:\Program Files\PackageManagement\NuGet\Packages\MailKit.3.1.1\lib\netstandard2.0\MailKit.dll^"");
+			FileWriteLn(nFile," Add-Type -Path ^"C:\Program Files\PackageManagement\NuGet\Packages\MimeKit.3.1.1\lib\netstandard2.0\MimeKit.dll^"");
+			FileWriteLn(nFile," $SMTP     = New-OBJECT MailKit.Net.Smtp.SmtpClient");
+			FileWriteLn(nFile," $Message  = New-OBJECT MimeKit.MimeMessage");
+			FileWriteLn(nFile," $TextPart = [MimeKit.TextPart]::new(^"plain^")");
+			FileWriteLn(nFile," $TextPart.Text = ^"This mail is only a test, do not reply.^"");
+			FileWriteLn(nFile," $Message.From.Add(^""+mail_sender+"^")");
+			FileWriteLn(nFile," $Message.To.Add(^""+mail_receiver_1+"^")");
+			IF mail_receiver_2 <> "" THEN
+				FileWriteLn(nFile," $Message.To.Add(^""+mail_receiver_2+"^")");
+			END
+			IF mail_receiver_3 <> "" THEN
+				FileWriteLn(nFile," $Message.To.Add(^""+mail_receiver_3+"^")");
+			END
+			IF mail_receiver_4 <> "" THEN
+				FileWriteLn(nFile," $Message.To.Add(^""+mail_receiver_4+"^")");
+			END
+			FileWriteLn(nFile," $Message.Subject = 'Test Email'");
+			FileWriteLn(nFile," $Message.Body    = $TextPart");
+			FileWriteLn(nFile," $SMTP.Connect('"+mail_server+"', "+IntToStr(mail_port)+", $SecureSocketOptions.StartTlsWhenAvailable)");
+			FileWriteLn(nFile," $SMTP.Authenticate('"+mail_sender+"', '"+mail_password+"' )");
+			FileWriteLn(nFile," $SMTP.Send($Message)");
+			FileWriteLn(nFile," $SMTP.Disconnect($true)");
+			FileWriteLn(nFile," $SMTP.Dispose()");
+		
+			FileClose(nFile);
+		END
+	
+		ErrSet(0);
+		
+		SleepMS(500); //pausa
+	
+		ErrSet(1);
+		sFile = "c:\data\mail\send_test.bat";
+		nFile = FileOpen(sFile,"w");
+		
+		IF nFile <> -1 THEN
+			FileWriteLn(nFile,"cd C:\Program Files\PowerShell\7");
+			FileWriteLn(nFile,"pwsh -executionpolicy remotesigned -File  C:\data\mail\send_test.ps1");
+			FileWrite(nFile,"pause");
+			
+			FileClose(nFile);	
+		END
+		
+		ErrSet(0);
+		ExecEx(sFile);
+		//Exec("pwsh ^"C:\data\mail\send_test.ps1^"");
+	
+	END
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION send_cycle_folder(INT nCycle)
+INT nFile;
+STRING sFile;
+
+	//check numero ciclo
+	IF nCycle <1 THEN RETURN END;
+	
+	//check su abilitazione mail
+	IF mail_enable=0 THEN RETURN END;
+	
+	IF MailKit_enable = 0 THEN //Invio e-mail tramite batch (SendEmail.exe)
+	
+		ErrSet(1);
+		
+		sFile = "c:\data\mail\send_cycle.bat";
+		
+		nFile = FileOpen(sFile,"w");
+		
+		IF nFile <> -1 THEN
+			FileWriteLn(nFile,"echo off");
+			FileWriteLn(nFile,"cd c:\data\mail");
+			FileWriteLn(nFile,"cls");
+			
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo    Deleting other zip files (if exist)");
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo -");
+			FileWriteLn(nFile,"echo -");		
+			FileWriteLn(nFile,"del /q cycle_*");
+			FileWriteLn(nFile," ");
+			
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo    Creating zip file of cycle "+IntToStr(nCycle));
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo -");
+			FileWriteLn(nFile,"echo -");
+			
+			FileWriteLn(nFile,"call CScript  _zipIt.vbs  C:\cycle\"+IntToStr(nCycle)+" C:\data\mail\cycle_"+IntToStr(nCycle)+".zip");
+			FileWriteLn(nFile," ");
+	
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo    Sending zip file to "+mail_receiver_1);
+			FileWriteLn(nFile,"echo    Sending zip file to "+mail_receiver_2);
+			FileWriteLn(nFile,"echo    Sending zip file to "+mail_receiver_3);
+			FileWriteLn(nFile,"echo    Sending zip file to "+mail_receiver_4);						
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo -");
+			FileWriteLn(nFile,"echo -");
+
+			FileWrite(nFile,"sendemail");
+			FileWrite(nFile," -f "+mail_sender);
+			FileWrite(nFile," -t "+mail_receiver_1);
+			FileWrite(nFile,"  "+mail_receiver_2);
+			FileWrite(nFile,"  "+mail_receiver_3);
+			FileWrite(nFile,"  "+mail_receiver_4);						
+			FileWrite(nFile," -u Report cycle "+IntToStr(nCycle));
+			FileWrite(nFile," -m See attached");
+			FileWrite(nFile," -a cycle_"+IntToStr(nCycle)+".zip");		
+			FileWrite(nFile," -s "+mail_server)
+			FileWrite(nFile,":"+IntToStr(mail_port));
+			FileWrite(nFile," -xu "+mail_sender);
+			FileWrite(nFile," -xp "+mail_password);	
+			IF mail_tls THEN
+				FileWrite(nFile," -o tls=yes");	
+			END
+			
+			FileWriteLn(nFile," ");
+			FileWriteLn(nFile,"echo -");
+			FileWriteLn(nFile,"echo -");
+			FileWrite(nFile,"pause");
+			
+			FileClose(nFile);
+			
+			
+		END
+		
+		ErrSet(0);
+	
+		Exec("c:\data\mail\send_cycle.bat");
+		
+	ELSE //Invio e-mail tramite PowerShell (MailKit.dll)
+	
+		ErrSet(1);
+		sFile = "c:\data\mail\send_cycle.ps1";
+		nFile = FileOpen(sFile,"w");
+		
+		IF nFile <> -1 THEN
+			FileWriteLn(nFile,"Add-Type -Path ^"C:\Program Files\PackageManagement\NuGet\Packages\MailKit.3.1.1\lib\netstandard2.0\MailKit.dll^"");
+			FileWriteLn(nFile," Add-Type -Path ^"C:\Program Files\PackageManagement\NuGet\Packages\MimeKit.3.1.1\lib\netstandard2.0\MimeKit.dll^"");
+			FileWriteLn(nFile," $SMTP     = New-OBJECT MailKit.Net.Smtp.SmtpClient");
+			FileWriteLn(nFile," $Message  = New-OBJECT MimeKit.MimeMessage");
+			FileWriteLn(nFile," $Builder  = New-OBJECT MimeKit.BodyBuilder");
+			FileWriteLn(nFile," $Builder.TextBody = ^"Cycle "+IntToStr(nCycle)+" terminated. Please see the file attached^"");
+			//FileWriteLn(nFile," $Builder.HtmlBody = [System.IO.File]::ReadAllText(^"C:\Data\Report\cycle_general_report.htm^")");
+			FileWriteLn(nFile," $Builder.Attachments.Add(^"C:\data\mail\cycle_"+IntToStr(nCycle)+".zip^")");
+			FileWriteLn(nFile," $Message.From.Add(^""+mail_sender+"^")");
+			FileWriteLn(nFile," $Message.To.Add(^""+mail_receiver_1+"^")");
+			IF mail_receiver_2 <> "" THEN
+				FileWriteLn(nFile," $Message.To.Add(^""+mail_receiver_2+"^")");
+			END
+			IF mail_receiver_3 <> "" THEN
+				FileWriteLn(nFile," $Message.To.Add(^""+mail_receiver_3+"^")");
+			END
+			IF mail_receiver_4 <> "" THEN
+				FileWriteLn(nFile," $Message.To.Add(^""+mail_receiver_4+"^")");
+			END
+			FileWriteLn(nFile," $Message.Subject = 'Report cycle "+IntToStr(nCycle)+"'");
+			FileWriteLn(nFile," $Message.Body = $Builder.ToMessageBody()");
+			FileWriteLn(nFile," $SMTP.Connect('"+mail_server+"', "+IntToStr(mail_port)+", $SecureSocketOptions.StartTlsWhenAvailable)");
+			FileWriteLn(nFile," $SMTP.Authenticate('"+mail_sender+"', '"+mail_password+"' )");
+			FileWriteLn(nFile," $SMTP.Send($Message)");
+			FileWriteLn(nFile," $SMTP.Disconnect($true)");
+			FileWriteLn(nFile," $SMTP.Dispose()");
+		
+			FileClose(nFile);
+		END
+	
+		ErrSet(0);
+		
+		SleepMS(500); //pausa
+	
+		ErrSet(1);
+		sFile = "c:\data\mail\send_cycle.bat";
+		nFile = FileOpen(sFile,"w");
+		
+		IF nFile <> -1 THEN
+			FileWriteLn(nFile,"echo off");
+			FileWriteLn(nFile,"cd c:\data\mail");
+			FileWriteLn(nFile,"cls");
+			
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo    Deleting other zip files (if exist)");
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo -");
+			FileWriteLn(nFile,"echo -");		
+			FileWriteLn(nFile,"del /q cycle_*");
+			FileWriteLn(nFile," ");
+			
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo    Creating zip file of cycle "+IntToStr(nCycle));
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo -");
+			FileWriteLn(nFile,"echo -");
+			
+			FileWriteLn(nFile,"call CScript  _zipIt.vbs  C:\cycle\"+IntToStr(nCycle)+" C:\data\mail\cycle_"+IntToStr(nCycle)+".zip");
+			FileWriteLn(nFile," ");
+	
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			FileWriteLn(nFile,"echo    Sending zip file to "+mail_receiver_1);
+			FileWriteLn(nFile,"echo    Sending zip file to "+mail_receiver_2);
+			FileWriteLn(nFile,"echo    Sending zip file to "+mail_receiver_3);
+			FileWriteLn(nFile,"echo    Sending zip file to "+mail_receiver_4);						
+			FileWriteLn(nFile,"echo -------------------------------------------------------------------------");
+			
+			FileWriteLn(nFile,"cd C:\Program Files\PowerShell\7");
+			FileWriteLn(nFile,"pwsh -executionpolicy remotesigned -File  C:\data\mail\send_cycle.ps1");
+			
+			FileWriteLn(nFile," ");
+			FileWriteLn(nFile,"echo -");
+			FileWriteLn(nFile,"echo -");
+			FileWrite(nFile,"pause");
+			
+			FileClose(nFile);	
+		END
+		
+		ErrSet(0);
+		ExecEx(sFile);
+		
+	END
+
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION enable_mailkit();
+
+	//Viene verificato che MailKit e PowerShell v7 siano installati
+	IF FileExist("C:\Program Files\PackageManagement\NuGet\Packages\MailKit.3.1.1\lib\netstandard2.0\MailKit.dll") THEN
+		IF FileExist("C:\Program Files\PackageManagement\NuGet\Packages\MimeKit.3.1.1\lib\netstandard2.0\MimeKit.dll") THEN
+			IF FileExist("C:\Program Files\PowerShell\7\pwsh.exe") THEN
+				Message("@(Mail settings)","@(MailKit successully enabled)",0);
+				RETURN
+			ELSE
+				IF Message("@(Mail settings)","@(Powershell is not updated! Press OK to update)",1) <> 0 THEN
+					MailKit_enable = 0;
+					RETURN
+				END
+			END
+		ELSE
+			IF Message("@(Mail settings)","@(MimeKit is not installed! Press OK to install)",1) <> 0 THEN
+				MailKit_enable = 0;
+				RETURN
+			END
+		END
+	ELSE
+		IF Message("@(Mail settings)","@(MailKit is not installed! Press OK to install)",1) <> 0 THEN
+			MailKit_enable = 0;
+			RETURN
+		END
+	END
+	
+	//Avvio installazione MailKit
+	Exec("PowerShell -NoProfile -ExecutionPolicy Unrestricted -Command ^"& {Start-Process PowerShell -ArgumentList '-NoProfile -ExecutionPolicy Unrestricted -File ^"^"C:\data\mail\MailKit.ps1^"^"' -Verb RunAs}^"");
+	
+	//Viene verificato che MailKit e PowerShell v7 siano installati
+	IF FileExist("C:\Program Files\PackageManagement\NuGet\Packages\MailKit.3.1.1\lib\netstandard2.0\MailKit.dll") THEN
+		IF FileExist("C:\Program Files\PackageManagement\NuGet\Packages\MimeKit.3.1.1\lib\netstandard2.0\MimeKit.dll") THEN
+			IF FileExist("C:\Program Files\PowerShell\7\pwsh.exe") THEN
+				Message("@(Mail settings)","@(MailKit successully enabled)",0);
+				RETURN
+			ELSE
+				Message("@(Mail settings)","@(Powershell is not updated! Please retry)",0)
+				MailKit_enable = 0;
+				RETURN
+			END
+		ELSE
+			Message("@(Mail settings)","@(MimeKit is not installed! Please retry)",0)
+			MailKit_enable = 0;
+			RETURN
+		END
+	ELSE
+		Message("@(Mail settings)","@(MailKit is not installed! Please retry)",1)
+		MailKit_enable = 0;
+		RETURN
+	END
+
+END

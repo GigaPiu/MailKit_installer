@@ -1,0 +1,14 @@
+Funzionamento invio e-mail tramite PowerShell con TLS 1.2
+
+Per l'invio tramite PowerShell è necessario l'installazione del pacchetto MailKit (sviluppato da un dipendente Microsoft)
+Per l'installazione avviare il file batch "MailKit.bat" (deve stare nella cartella C:/Data/mail) nel PC di supervisione con Internet e Windows Update accesi, verrà avviato PowerShell come amministratore per:
+	- registrazione sorgente pacchetti
+	- installazione pacchetti e-mail
+	- aggiornamento terminale Windows
+	- aggiornamento a PowerShell 7 (supporto TLS 1.2)
+
+Al termine chiudere la batch
+
+Nel progetto creare una variabile (BOOL) del PC 'MailKit_enable' e aggiungere il relativo pulsante nelle impostazioni delle e-mail.
+
+La funzione di Citect "Fn_mail.ci" include la funzione di invio tramite il classico Sendemail.exe e tramite il nuovo MailKit.dll compilando automaticamente uno script di PowerShell (file ps1).

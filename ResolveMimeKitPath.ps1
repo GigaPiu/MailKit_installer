@@ -1,0 +1,1 @@
+Resolve-Path -Path 'C:\Program Files\PackageManagement\NuGet\Packages\*\lib\netstandard2.0\MimeKit.dll' | Out-file -FilePath 'C:\data\mail\MailKit\MimeKitPath.path'
